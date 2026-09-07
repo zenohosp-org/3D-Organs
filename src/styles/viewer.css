@@ -1,0 +1,976 @@
+/* ===================================================================
+   ORGAN 3D — Application shell
+   -------------------------------------------------------------------
+   Layout is a three-column frame around a canvas that must never be
+   letterboxed or scrolled: left rail for what you are looking at,
+   right panel for what you are doing to it, canvas taking every
+   remaining pixel.
+
+   All colour, spacing, radius and shadow values come from the --hms-*
+   tokens in base.css. Nothing here invents a value.
+   =================================================================== */
+
+.o3d-app {
+    display: grid;
+    grid-template-columns: var(--o3d-rail-w) 1fr var(--o3d-panel-w);
+    grid-template-rows: var(--o3d-topbar-h) 1fr;
+    grid-template-areas:
+        "top  top    top"
+        "rail canvas panel";
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+    background: var(--hms-gray-100);
+}
+
+/* ---------------- Top bar ---------------- */
+
+.o3d-topbar {
+    grid-area: top;
+    display: flex;
+    align-items: center;
+    gap: var(--hms-space-sm);
+    padding: 0 var(--hms-space-md);
+    background: var(--hms-white);
+    border-bottom: 1px solid var(--hms-gray-200);
+    z-index: var(--hms-z-sticky);
+}
+
+.o3d-brand {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: -0.01em;
+    color: var(--hms-gray-900);
+    padding-right: var(--hms-space-md);
+    margin-right: 2px;
+    border-right: 1px solid var(--hms-gray-200);
+    height: 26px;
+    white-space: nowrap;
+}
+
+.o3d-brand__mark {
+    display: grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    background: var(--hms-primary);
+    color: var(--hms-white);
+    flex: none;
+}
+
+.o3d-brand__sub {
+    font-weight: 400;
+    font-size: 11px;
+    color: var(--hms-gray-500);
+    letter-spacing: 0;
+}
+
+.o3d-toolgroup {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 2px;
+    background: var(--hms-gray-100);
+    border-radius: var(--hms-radius);
+}
+
+.o3d-toolgroup--divider { margin-left: auto; }
+
+.o3d-tool {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 30px;
+    min-width: 30px;
+    padding: 0 9px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--hms-gray-600);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--hms-transition-fast);
+    white-space: nowrap;
+}
+
+.o3d-tool:hover:not(:disabled) { background: var(--hms-white); color: var(--hms-gray-900); }
+.o3d-tool:disabled { opacity: 0.35; cursor: not-allowed; }
+
+.o3d-tool--on {
+    background: var(--hms-primary);
+    color: var(--hms-white);
+    box-shadow: var(--hms-shadow-xs);
+}
+.o3d-tool--on:hover { background: var(--hms-primary-hover); color: var(--hms-white); }
+
+/* ---------------- Rail & panel shells ---------------- */
+
+.o3d-rail,
+.o3d-panel {
+    display: flex;
+    flex-direction: column;
+    background: var(--hms-white);
+    overflow: hidden;
+    min-height: 0;
+}
+
+.o3d-rail { grid-area: rail; border-right: 1px solid var(--hms-gray-200); }
+.o3d-panel { grid-area: panel; border-left: 1px solid var(--hms-gray-200); }
+
+.o3d-section {
+    border-bottom: 1px solid var(--hms-gray-200);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.o3d-section--grow { flex: 1; min-height: 0; }
+
+.o3d-section__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--hms-space-sm);
+    padding: 10px var(--hms-space-md);
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--hms-gray-500);
+    background: var(--hms-gray-50);
+    flex: none;
+}
+
+.o3d-section__body {
+    padding: var(--hms-space-sm) var(--hms-space-sm) var(--hms-space-md);
+    overflow-y: auto;
+    min-height: 0;
+}
+
+.o3d-section__count {
+    font-weight: 600;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--hms-gray-400);
+    font-variant-numeric: tabular-nums;
+}
+
+/* ---------------- Canvas ---------------- */
+
+.o3d-canvas {
+    grid-area: canvas;
+    position: relative;
+    min-width: 0;
+    background:
+        radial-gradient(120% 90% at 50% 0%, var(--o3d-stage-top) 0%, var(--o3d-stage-bottom) 70%);
+}
+
+.o3d-canvas canvas { display: block; touch-action: none; outline: none; }
+
+.o3d-canvas-loader {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    color: #cbd5e1;
+    font-size: 12px;
+    font-family: var(--hms-font-family);
+    white-space: nowrap;
+}
+
+.o3d-canvas-loader__spinner {
+    width: 26px;
+    height: 26px;
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    border-top-color: #7dd3fc;
+    border-radius: 50%;
+    animation: o3d-spin 0.8s linear infinite;
+}
+
+@keyframes o3d-spin { to { transform: rotate(360deg); } }
+
+/* Floating overlays on the canvas */
+.o3d-overlay {
+    position: absolute;
+    z-index: 5;
+    pointer-events: none;
+}
+
+.o3d-overlay > * { pointer-events: auto; }
+
+.o3d-overlay--tl { top: var(--hms-space-md); left: var(--hms-space-md); }
+.o3d-overlay--tr { top: var(--hms-space-md); right: var(--hms-space-md); }
+.o3d-overlay--bl { bottom: var(--hms-space-md); left: var(--hms-space-md); }
+
+.o3d-hud {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 9px 12px;
+    border-radius: var(--hms-radius);
+    background: rgba(12, 16, 22, 0.72);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    color: #e2e8f0;
+    font-size: 11.5px;
+    line-height: 1.45;
+    max-width: 300px;
+}
+
+.o3d-hud__title { font-weight: 600; color: #f8fafc; font-size: 12.5px; }
+.o3d-hud__meta { color: #94a3b8; font-size: 10.5px; font-family: var(--o3d-mono); }
+
+.o3d-hud__hint {
+    color: #94a3b8;
+    font-size: 10.5px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.o3d-hud__hint kbd {
+    font-family: var(--o3d-mono);
+    font-size: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    padding: 1px 4px;
+    color: #cbd5e1;
+}
+
+.o3d-zoombar {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 4px;
+    border-radius: var(--hms-radius);
+    background: rgba(12, 16, 22, 0.72);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.o3d-zoombar button {
+    width: 32px;
+    height: 32px;
+    display: grid;
+    place-items: center;
+    border: none;
+    background: transparent;
+    color: #cbd5e1;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: var(--hms-transition-fast);
+}
+
+.o3d-zoombar button:hover { background: rgba(255, 255, 255, 0.12); color: #fff; }
+
+/* ---------------- Lists ---------------- */
+
+.o3d-list { display: flex; flex-direction: column; gap: 2px; }
+
+.o3d-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 7px 8px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+    font-size: 12.5px;
+    color: var(--hms-gray-700);
+    transition: var(--hms-transition-fast);
+}
+
+.o3d-item:hover { background: var(--hms-gray-50); }
+
+.o3d-item--on {
+    background: var(--hms-gray-100);
+    border-color: var(--hms-gray-300);
+    color: var(--hms-gray-900);
+    font-weight: 600;
+}
+
+.o3d-item--muted { opacity: 0.42; }
+
+.o3d-item__main { flex: 1; min-width: 0; }
+
+.o3d-item__label {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.o3d-item__hint {
+    display: block;
+    font-size: 10.5px;
+    font-weight: 400;
+    color: var(--hms-gray-500);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 1px;
+}
+
+.o3d-item__eye {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: transparent;
+    border-radius: 5px;
+    color: var(--hms-gray-400);
+    cursor: pointer;
+    transition: var(--hms-transition-fast);
+}
+
+.o3d-item__eye:hover { background: var(--hms-gray-200); color: var(--hms-gray-800); }
+
+.o3d-swatch {
+    flex: none;
+    width: 11px;
+    height: 11px;
+    border-radius: 3px;
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.18);
+}
+
+.o3d-empty {
+    padding: var(--hms-space-lg) var(--hms-space-md);
+    text-align: center;
+    color: var(--hms-gray-400);
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+/* ---------------- Search ---------------- */
+
+.o3d-search {
+    position: relative;
+    padding: var(--hms-space-sm);
+    flex: none;
+}
+
+.o3d-search input {
+    width: 100%;
+    height: 32px;
+    padding: 0 10px 0 30px;
+    border: 1px solid var(--hms-gray-300);
+    border-radius: 6px;
+    font-size: 12.5px;
+    font-family: inherit;
+    color: var(--hms-gray-900);
+    background: var(--hms-white);
+    transition: var(--hms-transition-fast);
+}
+
+.o3d-search input:focus {
+    outline: none;
+    border-color: var(--hms-primary);
+    box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.07);
+}
+
+.o3d-search svg {
+    position: absolute;
+    left: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--hms-gray-400);
+    pointer-events: none;
+}
+
+/* ---------------- Controls ---------------- */
+
+.o3d-field { padding: 8px var(--hms-space-sm); }
+
+.o3d-field__row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--hms-space-sm);
+    margin-bottom: 5px;
+}
+
+.o3d-field__label {
+    font-size: 11.5px;
+    font-weight: 500;
+    color: var(--hms-gray-600);
+}
+
+.o3d-field__value {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--hms-gray-900);
+    font-family: var(--o3d-mono);
+    font-variant-numeric: tabular-nums;
+}
+
+input[type="range"].o3d-range {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 4px;
+    border-radius: 999px;
+    background: var(--hms-gray-200);
+    outline: none;
+    cursor: pointer;
+}
+
+input[type="range"].o3d-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--hms-primary);
+    border: 2px solid var(--hms-white);
+    box-shadow: var(--hms-shadow-sm);
+    cursor: grab;
+}
+
+input[type="range"].o3d-range::-webkit-slider-thumb:active { cursor: grabbing; }
+
+input[type="range"].o3d-range::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--hms-primary);
+    border: 2px solid var(--hms-white);
+    box-shadow: var(--hms-shadow-sm);
+    cursor: grab;
+    border-color: var(--hms-white);
+}
+
+.o3d-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--hms-space-sm);
+    width: 100%;
+    padding: 8px var(--hms-space-sm);
+    border: none;
+    background: transparent;
+    font-size: 12.5px;
+    color: var(--hms-gray-700);
+    cursor: pointer;
+    text-align: left;
+    border-radius: 6px;
+    transition: var(--hms-transition-fast);
+}
+
+.o3d-toggle:hover { background: var(--hms-gray-50); }
+
+.o3d-switch {
+    flex: none;
+    width: 32px;
+    height: 18px;
+    border-radius: 999px;
+    background: var(--hms-gray-300);
+    position: relative;
+    transition: var(--hms-transition-fast);
+}
+
+.o3d-switch::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--hms-white);
+    box-shadow: var(--hms-shadow-xs);
+    transition: var(--hms-transition-fast);
+}
+
+.o3d-switch--on { background: var(--hms-success); }
+.o3d-switch--on::after { transform: translateX(14px); }
+
+.o3d-seg {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    gap: 2px;
+    padding: 2px;
+    margin: 0 var(--hms-space-sm);
+    background: var(--hms-gray-100);
+    border-radius: 7px;
+}
+
+.o3d-seg button {
+    height: 27px;
+    border: none;
+    background: transparent;
+    border-radius: 5px;
+    font-size: 11.5px;
+    font-weight: 500;
+    color: var(--hms-gray-600);
+    cursor: pointer;
+    transition: var(--hms-transition-fast);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
+
+.o3d-seg button:hover { color: var(--hms-gray-900); }
+
+.o3d-seg button[aria-pressed="true"] {
+    background: var(--hms-white);
+    color: var(--hms-gray-900);
+    font-weight: 600;
+    box-shadow: var(--hms-shadow-xs);
+}
+
+/* Material swatch grid */
+.o3d-mats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 5px;
+    padding: 4px var(--hms-space-sm) var(--hms-space-sm);
+}
+
+.o3d-mat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 3px;
+    border: 1px solid var(--hms-gray-200);
+    border-radius: 7px;
+    background: var(--hms-white);
+    cursor: pointer;
+    font-size: 9.5px;
+    line-height: 1.25;
+    color: var(--hms-gray-600);
+    text-align: center;
+    transition: var(--hms-transition-fast);
+}
+
+.o3d-mat:hover { border-color: var(--hms-gray-400); }
+
+.o3d-mat--on {
+    border-color: var(--hms-primary);
+    box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.1);
+    color: var(--hms-gray-900);
+    font-weight: 600;
+}
+
+.o3d-mat__chip {
+    width: 100%;
+    height: 20px;
+    border-radius: 4px;
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.14);
+}
+
+/* Catalog cards */
+.o3d-cat { padding: 4px var(--hms-space-sm); }
+
+.o3d-cat__head {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--hms-gray-400);
+    padding: 8px 4px 5px;
+}
+
+.o3d-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    width: 100%;
+    padding: 8px;
+    border: 1px solid var(--hms-gray-200);
+    border-radius: 7px;
+    background: var(--hms-white);
+    cursor: pointer;
+    text-align: left;
+    transition: var(--hms-transition-fast);
+    margin-bottom: 5px;
+}
+
+.o3d-card:hover {
+    border-color: var(--hms-primary);
+    box-shadow: var(--hms-shadow-sm);
+    transform: translateY(-1px);
+}
+
+.o3d-card__icon {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    background: var(--hms-gray-100);
+    color: var(--hms-gray-600);
+}
+
+.o3d-card__title {
+    display: block;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--hms-gray-900);
+}
+
+.o3d-card__blurb {
+    display: block;
+    font-size: 10.5px;
+    color: var(--hms-gray-500);
+    line-height: 1.4;
+    margin-top: 2px;
+}
+
+/* Plan rows */
+.o3d-plan-row {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 8px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: var(--hms-transition-fast);
+}
+
+.o3d-plan-row:hover { background: var(--hms-gray-50); }
+
+.o3d-plan-row--on {
+    background: var(--hms-info-bg);
+    border-color: var(--hms-info-border);
+}
+
+.o3d-plan-row__name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--hms-gray-900);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.o3d-plan-row__size {
+    font-size: 10.5px;
+    color: var(--hms-gray-500);
+    font-family: var(--o3d-mono);
+}
+
+.o3d-row-actions { display: flex; gap: 1px; flex: none; }
+
+.o3d-icon-btn {
+    display: grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: transparent;
+    border-radius: 5px;
+    color: var(--hms-gray-400);
+    cursor: pointer;
+    transition: var(--hms-transition-fast);
+}
+
+.o3d-icon-btn:hover { background: var(--hms-gray-200); color: var(--hms-gray-800); }
+.o3d-icon-btn--danger:hover { background: var(--hms-danger-bg); color: var(--hms-danger); }
+
+.o3d-panel__footer {
+    display: flex;
+    gap: 6px;
+    padding: var(--hms-space-sm);
+    border-top: 1px solid var(--hms-gray-200);
+    background: var(--hms-gray-50);
+    flex: none;
+}
+
+.o3d-panel__footer .hms-btn-primary,
+.o3d-panel__footer .hms-btn-secondary { flex: 1; }
+
+.o3d-note {
+    font-size: 10.5px;
+    color: var(--hms-gray-500);
+    line-height: 1.5;
+    padding: 0 var(--hms-space-sm) var(--hms-space-sm);
+}
+
+.o3d-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 7px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 600;
+    background: var(--hms-gray-100);
+    color: var(--hms-gray-600);
+}
+
+.o3d-badge--warn {
+    background: var(--hms-warning-bg);
+    color: #92400e;
+    border: 1px solid var(--hms-warning-border);
+}
+
+/* Progress */
+.o3d-progress {
+    height: 3px;
+    background: var(--hms-gray-200);
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.o3d-progress__bar {
+    height: 100%;
+    background: var(--hms-primary);
+    transition: width 120ms linear;
+}
+
+/* ---------------- Modal ---------------- */
+
+.o3d-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.5);
+    backdrop-filter: blur(3px);
+    display: grid;
+    place-items: center;
+    z-index: var(--hms-z-modal-overlay);
+    padding: var(--hms-space-lg);
+}
+
+.o3d-modal {
+    width: min(560px, 100%);
+    max-height: 80vh;
+    overflow-y: auto;
+    background: var(--hms-white);
+    border-radius: var(--hms-radius-lg);
+    box-shadow: var(--hms-shadow-lg);
+    z-index: var(--hms-z-modal);
+}
+
+.o3d-modal__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--hms-space-md) var(--hms-space-lg);
+    border-bottom: 1px solid var(--hms-gray-200);
+    font-weight: 700;
+    font-size: 14px;
+    position: sticky;
+    top: 0;
+    background: var(--hms-white);
+}
+
+.o3d-modal__body {
+    padding: var(--hms-space-lg);
+    font-size: 12.5px;
+    line-height: 1.65;
+    color: var(--hms-gray-700);
+}
+
+.o3d-modal__body h4 {
+    margin: var(--hms-space-md) 0 var(--hms-space-xs);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--hms-gray-500);
+}
+
+.o3d-modal__body h4:first-child { margin-top: 0; }
+.o3d-modal__body p { margin: 0 0 var(--hms-space-sm); }
+.o3d-modal__body code {
+    font-family: var(--o3d-mono);
+    font-size: 11.5px;
+    background: var(--hms-gray-100);
+    padding: 1px 5px;
+    border-radius: 4px;
+}
+
+.o3d-kbd-table { width: 100%; border-collapse: collapse; }
+.o3d-kbd-table td { padding: 5px 0; border-bottom: 1px solid var(--hms-gray-100); }
+.o3d-kbd-table td:last-child { text-align: right; }
+.o3d-kbd-table kbd {
+    font-family: var(--o3d-mono);
+    font-size: 11px;
+    background: var(--hms-gray-100);
+    border: 1px solid var(--hms-gray-300);
+    border-bottom-width: 2px;
+    border-radius: 4px;
+    padding: 1px 6px;
+}
+
+/* ---------------- Responsive ---------------- */
+
+@media (max-width: 1180px) {
+    .o3d-app {
+        grid-template-columns: 232px 1fr 260px;
+        --o3d-rail-w: 232px;
+        --o3d-panel-w: 260px;
+    }
+}
+
+@media (max-width: 900px) {
+    .o3d-app {
+        grid-template-columns: 1fr;
+        grid-template-rows: var(--o3d-topbar-h) 1fr auto;
+        grid-template-areas:
+            "top"
+            "canvas"
+            "panel";
+    }
+    .o3d-rail { display: none; }
+    .o3d-panel {
+        border-left: none;
+        border-top: 1px solid var(--hms-gray-200);
+        max-height: 44vh;
+    }
+}
+
+/* ===================================================================
+   CONSULT MODE
+   -------------------------------------------------------------------
+   Turning the screen toward a patient is a different job from planning.
+   Both side panels collapse, the toolbar reduces to the few controls
+   that matter mid-conversation, and the model gets the whole surface.
+
+   The panels are collapsed by GRID TRACK rather than `display: none`,
+   so React never unmounts the canvas — unmounting would drop the WebGL
+   context and force a full reload of the geometry every time a doctor
+   toggled the mode.
+   =================================================================== */
+
+.o3d-app--consult {
+    grid-template-columns: 0 1fr 0;
+}
+
+.o3d-app--consult .o3d-rail,
+.o3d-app--consult .o3d-panel {
+    opacity: 0;
+    pointer-events: none;
+    border: none;
+}
+
+.o3d-app--consult .o3d-topbar {
+    background: var(--hms-gray-900);
+    border-bottom-color: #000;
+}
+
+.o3d-app--consult .o3d-brand,
+.o3d-app--consult .o3d-brand__sub { color: var(--hms-white); }
+.o3d-app--consult .o3d-brand { border-right-color: rgba(255, 255, 255, 0.16); }
+.o3d-app--consult .o3d-brand__mark { background: var(--hms-white); color: var(--hms-gray-900); }
+.o3d-app--consult .o3d-toolgroup { background: rgba(255, 255, 255, 0.09); }
+.o3d-app--consult .o3d-tool { color: #cbd5e1; }
+.o3d-app--consult .o3d-tool:hover:not(:disabled) { background: rgba(255, 255, 255, 0.14); color: #fff; }
+.o3d-app--consult .o3d-tool--on { background: var(--hms-white); color: var(--hms-gray-900); }
+
+/* In consult mode the technical overlays go: a patient does not need
+   exposure sliders or an FMA identifier. */
+.o3d-app--consult .o3d-overlay--tr { display: none; }
+.o3d-app--consult .o3d-hud__meta { display: none; }
+.o3d-app--consult .o3d-hud__title { font-size: 17px; font-weight: 600; }
+.o3d-app--consult .o3d-hud { padding: 13px 18px; max-width: 420px; }
+
+/* Big, unmissable phase switch — the control a doctor reaches for
+   mid-sentence while looking at the patient, not the screen. */
+.o3d-phase {
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    border-radius: 11px;
+    background: rgba(12, 16, 22, 0.78);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.o3d-phase button {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 11px 20px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: #cbd5e1;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--hms-transition-fast);
+}
+
+.o3d-phase button:hover:not(:disabled) { background: rgba(255, 255, 255, 0.1); color: #fff; }
+.o3d-phase button:disabled { opacity: 0.35; cursor: not-allowed; }
+
+.o3d-phase button[aria-pressed="true"] {
+    background: var(--hms-white);
+    color: var(--hms-gray-900);
+    box-shadow: var(--hms-shadow-sm);
+}
+
+.o3d-phase button[aria-pressed="true"].is-injury {
+    background: var(--hms-danger);
+    color: var(--hms-white);
+}
+
+.o3d-phase button[aria-pressed="true"].is-repair {
+    background: var(--hms-success);
+    color: var(--hms-white);
+}
+
+/* Selected pattern card */
+.o3d-card--on {
+    border-color: var(--hms-primary);
+    box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.09);
+}
+
+.o3d-card--on .o3d-card__icon {
+    background: var(--hms-primary);
+    color: var(--hms-white);
+}
+
+/* ---------------- Handout ---------------- */
+
+.o3d-modal--wide { width: min(860px, 100%); max-height: 88vh; }
+
+.o3d-handout-frame {
+    width: 100%;
+    height: 66vh;
+    border: none;
+    background: var(--hms-white);
+    display: block;
+}
+
+.o3d-spin { animation: o3d-spin 0.9s linear infinite; }
+
+/* ===================================================================
+   EMBEDDED MODE
+   -------------------------------------------------------------------
+   When this mounts inside the HMS consultation page it is one tab in a
+   flex column, not the whole document. It must therefore fill its
+   parent rather than the viewport — `100dvh` inside a tab body would
+   push the page's own chrome off screen.
+   =================================================================== */
+
+.o3d-app--embedded {
+    height: 100%;
+    min-height: 520px;
+}
+
+/* Full-screen consult mode still has to escape the tab it lives in. */
+.o3d-app--embedded.o3d-app--consult {
+    position: fixed;
+    inset: 0;
+    height: 100vh;
+    height: 100dvh;
+    z-index: var(--hms-z-modal);
+}

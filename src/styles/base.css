@@ -1,0 +1,167 @@
+/* ===================================================================
+   ORGAN 3D — Foundation Layer (base.css)
+   -------------------------------------------------------------------
+   Tokens are copied from the HMS design system (HMS-frontend/src/
+   styles/base.css) so this viewer drops into the hospital shell with
+   no visual seam: same Lexend typography, same neutral brand ramp,
+   same spacing / radius / shadow scales, same z-index ladder.
+
+   Viewer-only additions live under the `--o3d-*` prefix so they can
+   never collide with an `--hms-*` token when both sheets are loaded
+   in the same document.
+   =================================================================== */
+
+:root {
+    /* ---- Synced from HMS: brand ---- */
+    --hms-brand-primary: #000000;
+    --hms-brand-primary-hover: #171717;
+    --hms-brand-primary-active: #262626;
+    --hms-brand-primary-lightest: #f5f5f5;
+    --hms-primary: #0f172a;
+    --hms-primary-hover: #1e293b;
+
+    /* ---- Synced from HMS: neutrals ---- */
+    --hms-white: #ffffff;
+    --hms-gray-50: #f9fafb;
+    --hms-gray-100: #f3f4f6;
+    --hms-gray-200: #e5e7eb;
+    --hms-gray-300: #d1d5db;
+    --hms-gray-400: #9ca3af;
+    --hms-gray-500: #6b7280;
+    --hms-gray-600: #4b5563;
+    --hms-gray-700: #374151;
+    --hms-gray-800: #1f2937;
+    --hms-gray-900: #111827;
+
+    /* ---- Synced from HMS: semantics ---- */
+    --hms-success: #10b981;
+    --hms-success-bg: #dcfce7;
+    --hms-success-border: #bbf7d0;
+    --hms-warning: #f59e0b;
+    --hms-warning-bg: #fef3c7;
+    --hms-warning-border: #fde68a;
+    --hms-danger: #ef4444;
+    --hms-danger-bg: #fef2f2;
+    --hms-danger-border: #fecaca;
+    --hms-info: #3b82f6;
+    --hms-info-bg: #eff6ff;
+    --hms-info-border: #dbeafe;
+    --hms-accent-rx: #047857;
+    --hms-accent-external: #7c3aed;
+
+    /* ---- Synced from HMS: spacing ---- */
+    --hms-space-xs: 4px;
+    --hms-space-sm: 8px;
+    --hms-space-md: 16px;
+    --hms-space-lg: 24px;
+    --hms-space-xl: 32px;
+
+    /* ---- Synced from HMS: radius ---- */
+    --hms-radius-sm: 4px;
+    --hms-radius: 8px;
+    --hms-radius-lg: 12px;
+    --hms-radius-xl: 16px;
+    --hms-radius-full: 9999px;
+
+    /* ---- Synced from HMS: motion ---- */
+    --hms-transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    --hms-transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* ---- Synced from HMS: elevation ---- */
+    --hms-shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --hms-shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.10), 0 1px 2px -1px rgba(0, 0, 0, 0.10);
+    --hms-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.10), 0 2px 4px -2px rgba(0, 0, 0, 0.10);
+    --hms-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.10), 0 4px 6px -4px rgba(0, 0, 0, 0.10);
+    --hms-shadow-card: 0 1px 3px rgba(0, 0, 0, 0.05), 0 10px 20px -5px rgba(0, 0, 0, 0.08);
+
+    /* ---- Synced from HMS: typography ---- */
+    --hms-font-family: "Lexend", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+
+    /* ---- Synced from HMS: z-ladder ---- */
+    --hms-z-dropdown: 1000;
+    --hms-z-sticky: 1020;
+    --hms-z-drawer: 1040;
+    --hms-z-modal-overlay: 1050;
+    --hms-z-modal: 1060;
+    --hms-z-toast: 1080;
+
+    /* ---- Viewer-only additions ---- */
+    /* The canvas is the one deliberately dark surface in an otherwise
+       light product: tissue colour reads truthfully against neutral
+       charcoal, the way a surgical monitor is calibrated. */
+    --o3d-stage-top: #1b2027;
+    --o3d-stage-bottom: #0d1014;
+    --o3d-panel-w: 300px;
+    --o3d-rail-w: 268px;
+    --o3d-topbar-h: 52px;
+    --o3d-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+}
+
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html, body, #root { height: 100%; }
+
+body {
+    margin: 0;
+    font-family: var(--hms-font-family);
+    font-size: 14px;
+    color: var(--hms-gray-900);
+    background: var(--hms-gray-50);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+button { font-family: inherit; }
+
+/* HMS button primitives, trimmed to the variants this viewer uses. */
+.hms-btn-primary,
+.hms-btn-secondary,
+.hms-btn-danger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 9px 18px;
+    border-radius: 7px;
+    font-size: 12.6px;
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: var(--hms-transition-fast);
+}
+
+.hms-btn-primary { background: var(--hms-primary); color: var(--hms-white); }
+.hms-btn-primary:hover:not(:disabled) { background: var(--hms-primary-hover); }
+
+.hms-btn-secondary {
+    background: var(--hms-white);
+    color: var(--hms-gray-700);
+    border-color: var(--hms-gray-300);
+}
+.hms-btn-secondary:hover:not(:disabled) { background: var(--hms-gray-50); }
+
+.hms-btn-danger { background: var(--hms-danger); color: var(--hms-white); }
+.hms-btn-danger:hover:not(:disabled) { background: #dc2626; }
+
+.hms-btn-primary:active,
+.hms-btn-secondary:active,
+.hms-btn-danger:active { transform: scale(0.97); }
+
+.hms-btn-primary:disabled,
+.hms-btn-secondary:disabled,
+.hms-btn-danger:disabled { opacity: 0.45; cursor: not-allowed; }
+
+:where(button, [role="slider"], input, select):focus-visible {
+    outline: 2px solid var(--hms-info);
+    outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+    }
+}

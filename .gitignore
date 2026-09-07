@@ -1,0 +1,11 @@
+node_modules/
+dist/
+vendor/
+.DS_Store
+*.local
+.vite/
+
+# Textured organ meshes — provenance unverified, deliberately NOT
+# redistributed. See THIRD-PARTY-NOTICES.md §3.
+# Fetch locally with: ./scripts/fetch-models.sh --all
+public/models/organs/
