@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { Component, useEffect, useMemo } from 'react';
 import * as THREE from 'three';
 import { useGLTF } from '@react-three/drei';
 import { useSceneStore } from '../store/useSceneStore';
@@ -181,3 +181,50 @@ export default function OrganModel({ file, position }) {
 /** Warm the cache for a model the doctor is likely to open next. */
 OrganModel.preload = (file) =>
   useGLTF.preload(`${import.meta.env.BASE_URL}models/organs/${file}`);
+
+/* -------------------------------------------------------------------
+   Failure containment
+   -------------------------------------------------------------------
+   useGLTF throws on a failed fetch, and a throw inside the R3F tree
+   unmounts the Canvas and loses the WebGL context — the entire viewer
+   dies because one optional decoration was missing. An availability
+   probe should prevent that, but a probe is a prediction and this is
+   the guarantee: an organ that fails to load takes only itself down.
+   ------------------------------------------------------------------- */
+
+class OrganBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { failed: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  componentDidCatch(error) {
+    // Surfaced so the shell can clear the selection and tell the user,
+    // rather than leaving a dead entry selected in the picker.
+    this.props.onError?.(error);
+  }
+
+  componentDidUpdate(prev) {
+    // A different organ deserves a fresh attempt.
+    if (prev.file !== this.props.file && this.state.failed) {
+      this.setState({ failed: false });
+    }
+  }
+
+  render() {
+    return this.state.failed ? null : this.props.children;
+  }
+}
+
+/** OrganModel that cannot take the scene down with it. */
+export function SafeOrganModel({ file, position, onError }) {
+  return (
+    <OrganBoundary file={file} onError={onError}>
+      <OrganModel file={file} position={position} />
+    </OrganBoundary>
+  );
+}

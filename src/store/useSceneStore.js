@@ -100,6 +100,10 @@ export const useSceneStore = create((set, get) => ({
   /* ---------------- Display ---------------- */
   xray: false,
   organFile: null, // optional textured GLB overlaid on the atlas geometry
+  // Which textured organs actually exist on this deployment. They are not
+  // committed to the repo (unverified licence), so this is probed at
+  // startup rather than assumed — see three/organAvailability.js.
+  organsAvailable: null, // null = still probing, Set = resolved
   showGrid: true,
   showShadows: true,
   autoRotate: false,
@@ -110,6 +114,7 @@ export const useSceneStore = create((set, get) => ({
   clipPosition: 0,
 
   setDisplay: (patch) => set(patch),
+  setOrgansAvailable: (organsAvailable) => set({ organsAvailable }),
 
   /* ---------------- Consultation ----------------
      `phase` is the spine of the patient conversation: the same plan

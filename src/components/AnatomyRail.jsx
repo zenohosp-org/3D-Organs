@@ -36,6 +36,7 @@ export default function AnatomyRail({ onFocusPart }) {
   const organFile = useSceneStore((s) => s.organFile);
   const setDisplay = useSceneStore((s) => s.setDisplay);
   const layLanguage = useSceneStore((s) => s.layLanguage);
+  const organsAvailable = useSceneStore((s) => s.organsAvailable);
   const fracturedPart = useSceneStore((s) => s.fracture?.partIndex ?? -1);
 
   const filtered = useMemo(() => {
@@ -89,20 +90,34 @@ export default function AnatomyRail({ onFocusPart }) {
                 <span className="o3d-item__hint">Atlas geometry only</span>
               </span>
             </button>
-            {ORGAN_MODELS.map((m) => (
-              <button
-                key={m.id}
-                className={`o3d-item ${organFile === m.file ? 'o3d-item--on' : ''}`}
-                onClick={() => setDisplay({ organFile: organFile === m.file ? null : m.file })}
-                title={m.hint}
-              >
-                <span className="o3d-item__main">
-                  <span className="o3d-item__label">{m.label}</span>
-                  <span className="o3d-item__hint">{m.hint}</span>
-                </span>
-              </button>
-            ))}
+            {ORGAN_MODELS.map((m) => {
+              // While probing (null) keep rows enabled rather than
+              // flashing everything disabled for a few hundred ms.
+              const missing = organsAvailable ? !organsAvailable.has(m.file) : false;
+              return (
+                <button
+                  key={m.id}
+                  className={`o3d-item ${organFile === m.file ? 'o3d-item--on' : ''} ${missing ? 'o3d-item--muted' : ''}`}
+                  onClick={() => !missing && setDisplay({ organFile: organFile === m.file ? null : m.file })}
+                  disabled={missing}
+                  title={missing ? 'Not installed on this deployment — run scripts/fetch-models.sh --all' : m.hint}
+                >
+                  <span className="o3d-item__main">
+                    <span className="o3d-item__label">{m.label}</span>
+                    <span className="o3d-item__hint">
+                      {missing ? 'Not installed' : m.hint}
+                    </span>
+                  </span>
+                </button>
+              );
+            })}
           </div>
+          {organsAvailable && organsAvailable.size === 0 && (
+            <p className="o3d-note" style={{ paddingTop: 8 }}>
+              Textured organs are not bundled with this deployment — their
+              upstream licence is unverified. The atlas anatomy is unaffected.
+            </p>
+          )}
         </div>
       </div>
 

@@ -4,7 +4,7 @@ import { Canvas, useThree } from '@react-three/fiber';
 import { OrbitControls, GizmoHelper, GizmoViewport, Grid, Html } from '@react-three/drei';
 import Stage from './Stage';
 import AnatomyMesh from './AnatomyMesh';
-import OrganModel from './OrganModel';
+import { SafeOrganModel } from './OrganModel';
 import { ImplantLayer } from './ImplantMesh';
 import FractureLayer from './FractureLayer';
 import { useSceneStore } from '../store/useSceneStore';
@@ -151,7 +151,7 @@ function Loader({ label }) {
   );
 }
 
-export default function Viewer({ geometry, parts, organFile, organPosition, radius = 10, cameraApiRef, onPickPart }) {
+export default function Viewer({ geometry, parts, organFile, organPosition, radius = 10, cameraApiRef, onPickPart, onOrganError }) {
   const showGrid = useSceneStore((s) => s.showGrid);
   const showShadows = useSceneStore((s) => s.showShadows);
   const autoRotate = useSceneStore((s) => s.autoRotate);
@@ -210,7 +210,9 @@ export default function Viewer({ geometry, parts, organFile, organPosition, radi
 
         {geometry && <FractureLayer mergedGeometry={geometry} />}
 
-        {organFile && <OrganModel file={organFile} position={organPosition} />}
+        {organFile && (
+          <SafeOrganModel file={organFile} position={organPosition} onError={onOrganError} />
+        )}
 
         <ImplantLayer />
       </Suspense>

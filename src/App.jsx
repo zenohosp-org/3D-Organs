@@ -12,6 +12,7 @@ import Handout from './components/Handout';
 import { useSceneStore, selectedImplant } from './store/useSceneStore';
 import { loadAtlas, buildMergedGeometry, ATLAS_SCALE } from './three/atlasLoader';
 import { partsForRegion } from './data/anatomy';
+import { probeOrgans } from './three/organAvailability';
 import { patientLabel } from './data/layTerms';
 import { disposeGeometryCache } from './three/implantGeometry';
 
@@ -59,6 +60,7 @@ export default function App({ embedded = false, patient = null }) {
   const phase = useSceneStore((s) => s.phase);
   const setPhase = useSceneStore((s) => s.setPhase);
   const fracture = useSceneStore((s) => s.fracture);
+  const setOrgansAvailable = useSceneStore((s) => s.setOrgansAvailable);
   const implantCount = useSceneStore((s) => s.implants.length);
 
   /* ---------------- Atlas manifest ---------------- */
@@ -121,6 +123,15 @@ export default function App({ embedded = false, patient = null }) {
 
   useEffect(() => () => disposeGeometryCache(), []);
 
+  /* Which textured organs exist here. Probed rather than assumed: they
+     are gitignored, so a deployment has none and a dev machine may have
+     all four. */
+  useEffect(() => {
+    let alive = true;
+    probeOrgans().then((set) => alive && setOrgansAvailable(set));
+    return () => { alive = false; };
+  }, [setOrgansAvailable]);
+
   /* ---------------- Keyboard ---------------- */
   useEffect(() => {
     const onKey = (e) => {
@@ -180,6 +191,17 @@ export default function App({ embedded = false, patient = null }) {
     setToast(msg);
     window.setTimeout(() => setToast(null), 2600);
   }, []);
+
+  /* Backstop: if an organ fails to load despite the probe, clear the
+     selection so the picker does not sit on a dead entry, and say why. */
+  const handleOrganError = useCallback(() => {
+    const file = useSceneStore.getState().organFile;
+    useSceneStore.getState().setDisplay({ organFile: null });
+    useSceneStore.getState().setOrgansAvailable(
+      new Set([...(useSceneStore.getState().organsAvailable ?? [])].filter((f) => f !== file))
+    );
+    flash('That organ model could not be loaded and is unavailable here.');
+  }, [flash]);
 
   const handleScreenshot = useCallback(() => {
     const canvas = document.querySelector('.o3d-canvas canvas');
@@ -296,6 +318,7 @@ export default function App({ embedded = false, patient = null }) {
           organPosition={organPosition}
           radius={radius}
           cameraApiRef={cameraApiRef}
+          onOrganError={handleOrganError}
         />
 
         {/* Hovered / selected structure readout */}
