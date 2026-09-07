@@ -169,6 +169,43 @@ stays fixed.
 
 ---
 
+## Deploying
+
+Static hosting. Vite preset, `vite build`, output `dist/`, no environment
+variables, no install command override.
+
+`vercel.json` sets the caching, and the values are deliberate:
+
+- **`/models/*` — one year, immutable.** The 58 MB of atlas geometry is a fixed
+  release of BodyParts3D; those filenames never change content. Without this
+  every visitor revalidates all 15 chunks on every page load, which is the
+  difference between one download per *user* and one per *page view*.
+- **`/assets/*` — one year, immutable.** Vite content-hashes these, so a new
+  build produces new URLs.
+- **`/` — `must-revalidate`.** The HTML shell must never be cached, or a deploy
+  ships new hashed assets that stale HTML never references.
+
+No frame-blocking headers are set, deliberately: this app is *meant* to be
+embedded in the HMS consultation page.
+
+Two things to know before this goes in front of patients:
+
+- **Vercel's Hobby tier is licensed for personal, non-commercial use.** A
+  clinical tool under an organisation account is commercial use. Move to Pro.
+- **The textured organs will not appear on a deployment built from this repo** —
+  the GLBs are gitignored (see licensing below), so the picker offers only
+  "None". Everything else works.
+
+After deploying, confirm compression and caching are both live — the `.bin`
+files are float data and compress by roughly half:
+
+```bash
+curl -sI -H 'Accept-Encoding: gzip,br' https://<url>/models/body-0.bin \
+  | grep -i 'content-encoding\|cache-control'
+```
+
+---
+
 ## Data sources and licensing
 
 Full detail in [`public/models/ATTRIBUTION.md`](public/models/ATTRIBUTION.md),
